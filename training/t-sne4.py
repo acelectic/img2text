@@ -247,12 +247,12 @@ batch_y = []
 summary_writer = tf.summary.FileWriter(r"C:\Users\miniBear\Desktop\nn\training\model", sess.graph)
 # data_size = len(batch_x)
 old_time = time.time()
-for i in range(4000):
+for i in range(5000):
 
     batch_x = []
     batch_y = []
     rlist = []
-    rate_train = int(0.65 * len(trainingData_x))
+    rate_train = int(0.1 * len(trainingData_x))
     while len(rlist) < rate_train:
         tmp = random.randint(0, len(trainingData_x)-1)
         if tmp not in rlist:
@@ -268,7 +268,7 @@ for i in range(4000):
         train_accuracy = accuracy.eval(feed_dict={x:testingData_x, y_: testingData_y, keep_prob: 1.0})
         print("step %d, training accuracy %g"%(i, train_accuracy))
 
-    train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.5})
+    train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
 
     summary_str = sess.run(merged_summary_op, feed_dict={x: batch_x, y_: batch_y, keep_prob: 1.0})
     summary_writer.add_summary(summary_str, i * len(batch_x) + i)
