@@ -267,6 +267,7 @@ for i in range(5000):
     if i%100 == 0:
         train_accuracy = accuracy.eval(feed_dict={x:testingData_x, y_: testingData_y, keep_prob: 1.0})
         print("step %d, training accuracy %g"%(i, train_accuracy))
+        print(correct_prediction)
 
     train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
 
