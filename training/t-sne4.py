@@ -99,7 +99,7 @@ for c in training_data:
 # add segmented data to well formatted list
 inputData_x = np.array(inputData_x)
 inputData_y = np.array(inputData_y)
-print("total : ",len(inputData_x),len(inputData_y))
+
 
 # shuffle the data
 inputData = list(zip(inputData_x,inputData_y))
@@ -115,8 +115,7 @@ trainingData_y = inputData_y[:len(inputData_y)-testing_data_len]
 testingData_x = np.array(inputData_x[len(inputData_x)-testing_data_len:])
 testingData_y = np.array(inputData_y[len(inputData_y)-testing_data_len:])
 
-print("training : ",len(trainingData_x),len(trainingData_y))
-print("testing  : ",len(testingData_x),len(testingData_y))
+
 
 
 # **********************************************************************
@@ -175,7 +174,6 @@ h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 W_fc2 = weight_variable([1024, 65])
 b_fc2 = bias_variable([65])
 
-
 y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
 
@@ -183,76 +181,61 @@ cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-sess.run(tf.global_variables_initializer())
-# error function
-# cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 
-# INIT NNet
-# ---------
 #################################################################### graph
 # Add summary ops to collect data
 w_h = tf.summary.histogram("weights", W)
 b_h = tf.summary.histogram("biases", b)
 
 with tf.name_scope("cost_function") as scope:
-    # Minimize error using cross entropy
-    # Cross entropy
-    #cost_function = -tf.reduce_sum(y_ * tf.log(new_y))
-    # Create a summary to monitor the cost function
     tf.summary.scalar("cost_function", cross_entropy)
 
 # Merge all summaries into a single operator
 merged_summary_op = tf.summary.merge_all()
-# training
-# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-# # ready to run
-init = tf.global_variables_initializer()
-# # Add ops to save and restore all the variables.
+
 saver = tf.train.Saver()
-# define session
-# sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 sess = tf.InteractiveSession()
-# run session (doesn't start training)
-#sess.run(init)
 sess.run(tf.global_variables_initializer())
 
 # TRAINING
 # --------
-# run training
-# batch_x = []
-# batch_y = []
-localtime = time.asctime( time.localtime(time.time()))
-print ("Local current time :", localtime)
+
 batch_x = []
 batch_y = []
 
-#random
-# rlist=[]
-# rate_train = int(0.4*len(trainingData_x))
-# while len(rlist)<rate_train:
-#     tmp = random.randint(0,len(trainingData_x))
-#     if tmp not in rlist:
-#         rlist.append(tmp)
-#
-# print(rlist)
-#
-# for r in range(0,len(trainingData_x)):
-#     batch_x.append(trainingData_x[r])
-#     batch_y.append(trainingData_y[r])
-
-
-# print (len(batch_x),len(batch_y))
-# print (batch_x,"\n",batch_y)
 
 summary_writer = tf.summary.FileWriter(r"C:\Users\miniBear\Desktop\nn\training\model", sess.graph)
-# data_size = len(batch_x)
-old_time = time.time()
-for i in range(5000):
 
+total_time = 0
+round_t = 0
+localtime = time.asctime( time.localtime(time.time()))
+print ("Local current time :", localtime)
+
+##################################################################################################
+rate_train = int(0.5 * len(trainingData_x))
+
+print("total : ",len(inputData_x),len(inputData_y))
+print("training : ",len(trainingData_x),len(trainingData_y))
+print("testing  : ",len(testingData_x),len(testingData_y))
+print("img per round :",rate_train,"of",len(trainingData_x))
+
+max_acc = 0
+max_index = 0
+
+for i in range(1000):
+
+    nt = time.time()
     batch_x = []
     batch_y = []
     rlist = []
-    rate_train = int(0.1 * len(trainingData_x))
+
+    train_accuracy = accuracy.eval(feed_dict={x: testingData_x, y_: testingData_y, keep_prob: 1.0})
+
+    if train_accuracy > max_acc:
+        max_acc = train_accuracy
+        max_index = i
+
+
     while len(rlist) < rate_train:
         tmp = random.randint(0, len(trainingData_x)-1)
         if tmp not in rlist:
@@ -264,40 +247,26 @@ for i in range(5000):
         batch_x.append(trainingData_x[r])
         batch_y.append(trainingData_y[r])
 
-    if i%100 == 0:
-        train_accuracy = accuracy.eval(feed_dict={x:testingData_x, y_: testingData_y, keep_prob: 1.0})
-        print("step %d, training accuracy %g"%(i, train_accuracy))
-        print(correct_prediction)
-
     train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
 
     summary_str = sess.run(merged_summary_op, feed_dict={x: batch_x, y_: batch_y, keep_prob: 1.0})
     summary_writer.add_summary(summary_str, i * len(batch_x) + i)
 
+    if i%100 == 0:
+
+        print("step %d, training accuracy %g"%(i, train_accuracy))
+
+        now_time = time.strftime('%H:%M:%S', time.gmtime(round_t))
+        total_time += round_t
+        total_t = time.strftime('%H:%M:%S', time.gmtime(total_time))
+        print("\tround:",i,"use time",now_time,"total time :", total_t)
+        round_t = 0
+
+    round_t += time.time() - nt
 
 
-#print("test accuracy %g"%accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+print ("best acc:", max_acc ,"on step:",max_index)
 
-# for i in range(100):
-#     # create batch of 100 random training samples
-#     # batch_indices = random.sample(range(0, len(trainingData_x)), 20)
-#     batch_x = []
-#     batch_y = []
-#
-#     for r in range(20):
-#         batch_x.append(trainingData_x[r])
-#         batch_y.append(trainingData_y[r])
-#     batch_x = np.array(batch_x)
-#     batch_y = np.array(batch_y)
-#     print("batch_x SIZE:",len(batch_x))
-#     sess.run(train_step, feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.5})
-#     # if i % 500==0:
-#     #     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-#     #     # accuracy
-#     #     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-#     #
-#     #     print("Accuracy :", sess.run(accuracy, feed_dict={x: testingData_x, y_: testingData_y,keep_prob: 1.0}))
-#
 save_path = saver.save(sess,r"C:\Users\miniBear\Desktop\nn\training\model\softmaxNNModel.model")
 print("Model saved to file: %s" % save_path)
 
@@ -311,11 +280,7 @@ print("Model saved to file: %s" % save_path)
 #
 #
 # print("Accuracy :",sess.run(accuracy, feed_dict={x: testingData_x, y_: testingData_y}))
-#
 
-# Save the variables to disk.
 #yop = tf.nn.softmax(tf.matmul(x, W) + b)
 #op = sess.run(yop, feed_dict={x: batch_x})
 #print (op)
-timesec = time.strftime('%H:%M:%S', time.gmtime(int(time.time()-old_time)))
-print("total time :",timesec)
