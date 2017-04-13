@@ -87,34 +87,49 @@ charMapR['ๆ'] = 64
 # PREPARING DATA
 inputData_x = [] # image, which is an input vector , 2925x1
 inputData_y = [] # output, denoting the character from the image, 28x1
+testData_x = []
+testData_y = []
 
-#d segmented data to well formatted list
-for c in training_data:
-    for i in range(len(training_data[c])):
-        inputData_x.append(training_data[c][i][0])
-        label_temp = [0]*65
-        label_temp[charMapR[c]] = 1
-        inputData_y.append(label_temp)
+size = 0
+r_train = 0
+
+for i in training_data:
+    train_index = []
+    test_index = []
+
+    size = len(training_data[i])
+    r_train = int(0.8 * size)
+
+    train_index = random.sample(range(size),r_train)
+    for j in range(size):
+        if j not in train_index:
+            test_index.append(j)
+
+    for j in train_index:
+        inputData_x.append(training_data[i][j][0])
+        inputData_y.append(training_data[i][j][1])
+    for j in test_index:
+        testData_x.append(training_data[i][j][0])
+        testData_y.append(training_data[i][j][1])
+
+print(len(testData_x[0]))
+
+
 
 # add segmented data to well formatted list
 inputData_x = np.array(inputData_x)
 inputData_y = np.array(inputData_y)
+testData_x = np.array(testData_x)
+testData_y = np.array(testData_y)
 
 
 # shuffle the data
 inputData = list(zip(inputData_x,inputData_y))
+testData = list(zip(testData_x,testData_y))
 random.shuffle(inputData)
+random.shuffle(testData)
 inputData_x,inputData_y = zip(*inputData)
-
-# separate training and testing data
-separateRatio = 0.20
-testing_data_len = int(len(inputData_x) * separateRatio)
-trainingData_x = inputData_x[:len(inputData_x)-testing_data_len]
-trainingData_y = inputData_y[:len(inputData_y)-testing_data_len]
-
-testingData_x = np.array(inputData_x[len(inputData_x)-testing_data_len:])
-testingData_y = np.array(inputData_y[len(inputData_y)-testing_data_len:])
-
+testData_x,testData_y = zip(*testData)
 
 
 
@@ -212,12 +227,14 @@ localtime = time.asctime( time.localtime(time.time()))
 print ("Local current time :", localtime)
 
 ##################################################################################################
-rate_train = int(0.5 * len(trainingData_x))
 
-print("total : ",len(inputData_x),len(inputData_y))
-print("training : ",len(trainingData_x),len(trainingData_y))
-print("testing  : ",len(testingData_x),len(testingData_y))
-print("img per round :",rate_train,"of",len(trainingData_x))
+
+random_rate = int(0.5*len(inputData_x))
+size_data = len(inputData_x)+len(testData_x)
+print("size of data: ",size_data,"shape : [",len(inputData_x[0]),",",len(inputData_y),"]")
+print("training : ",len(inputData_x))
+print("testing  : ",len(testData_x))
+print("img per round :",random_rate,"of",len(inputData_x))
 
 max_acc = 0
 max_index = 0
@@ -229,23 +246,23 @@ for i in range(1000):
     batch_y = []
     rlist = []
 
-    train_accuracy = accuracy.eval(feed_dict={x: testingData_x, y_: testingData_y, keep_prob: 1.0})
+    train_accuracy = accuracy.eval(feed_dict={x: testData_x, y_: testData_y, keep_prob: 1.0})
 
     if train_accuracy > max_acc:
         max_acc = train_accuracy
         max_index = i
 
 
-    while len(rlist) < rate_train:
-        tmp = random.randint(0, len(trainingData_x)-1)
+    while len(rlist) < random_rate:
+        tmp = random.randint(0, len(inputData_x)-1)
         if tmp not in rlist:
             rlist.append(tmp)
 
     # print(rlist)
 
     for r in rlist:
-        batch_x.append(trainingData_x[r])
-        batch_y.append(trainingData_y[r])
+        batch_x.append(inputData_x[r])
+        batch_y.append(inputData_y[r])
 
     train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
 
@@ -259,7 +276,7 @@ for i in range(1000):
         now_time = time.strftime('%H:%M:%S', time.gmtime(round_t))
         total_time += round_t
         total_t = time.strftime('%H:%M:%S', time.gmtime(total_time))
-        print("\tround:",i,"use time",now_time,"total time :", total_t)
+        print("time (now / total)",now_time,"/", total_t)
         round_t = 0
 
     round_t += time.time() - nt
@@ -284,3 +301,4 @@ print("Model saved to file: %s" % save_path)
 #yop = tf.nn.softmax(tf.matmul(x, W) + b)
 #op = sess.run(yop, feed_dict={x: batch_x})
 #print (op)
+
