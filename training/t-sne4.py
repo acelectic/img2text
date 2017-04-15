@@ -178,16 +178,22 @@ b_conv2 = bias_variable([32])
 h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = max_pool_2x2(h_conv2)
 
-W_conv3 = weight_variable([3, 3, 32, 64])
+W_conv3 = weight_variable([5, 5, 32, 64])
 b_conv3 = bias_variable([64])
 
 h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 h_pool3 = max_pool_2x2(h_conv3)
 
-W_fc1 = weight_variable([8*8*64, 1024])
+W_conv4 = weight_variable([5, 5, 64, 128])
+b_conv4 = bias_variable([128])
+
+h_conv4 = tf.nn.relu(conv2d(h_pool3, W_conv4) + b_conv4)
+h_pool4 = max_pool_2x2(h_conv4)
+
+W_fc1 = weight_variable([8*8*32, 1024])
 b_fc1 = bias_variable([1024])
 
-h_pool3_flat = tf.reshape(h_pool3, [-1, 8*8*64])
+h_pool3_flat = tf.reshape(h_pool4, [-1, 8*8*32])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
 keep_prob = tf.placeholder(tf.float32)
@@ -238,7 +244,7 @@ def train():
     ##################################################################################################
 
 
-    random_rate = int(0.5 * len(inputData_x))
+    random_rate = int(0.2 * len(inputData_x))
     size_data = len(inputData_x) + len(testData_x)
     print("size of data: ", size_data, "shape : [", len(inputData_x[0]), ",", len(inputData_y), "]")
     print("training : ", len(inputData_x))
@@ -248,7 +254,7 @@ def train():
     max_acc = 0
     max_index = 0
 
-    for i in range(1000):
+    for i in range(3000):
 
         nt = time.time()
         batch_x = []
@@ -413,7 +419,7 @@ def solve():
     #
     # plt.show()
 
-
+# train()
 solve()
 
 
