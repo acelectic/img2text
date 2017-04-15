@@ -4,6 +4,9 @@ import sys,os,pickle,random
 import numpy as np
 import tensorflow as tf
 import time
+import sklearn as sk
+from sklearn.metrics import precision_recall_fscore_support as score
+
 # training data previously stored as a dictionary and written to a pickle dump
 training_data = pickle.load( open( "dict.pickle", "rb" ) )
 # character image width and height
@@ -112,7 +115,7 @@ for i in training_data:
         testData_x.append(training_data[i][j][0])
         testData_y.append(training_data[i][j][1])
 
-print(len(testData_x[0]))
+# print(len(testData_x[0]))
 
 
 
@@ -197,6 +200,7 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+
 #################################################################### graph
 # Add summary ops to collect data
 w_h = tf.summary.histogram("weights", W)
@@ -212,93 +216,145 @@ saver = tf.train.Saver()
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
-# TRAINING
-# --------
 
-batch_x = []
-batch_y = []
+def train():
+    # TRAINING
+    # --------
 
-
-summary_writer = tf.summary.FileWriter(r"C:\Users\miniBear\Desktop\nn\training\model", sess.graph)
-
-total_time = 0
-round_t = 0
-localtime = time.asctime( time.localtime(time.time()))
-print ("Local current time :", localtime)
-
-##################################################################################################
-
-
-random_rate = int(0.5*len(inputData_x))
-size_data = len(inputData_x)+len(testData_x)
-print("size of data: ",size_data,"shape : [",len(inputData_x[0]),",",len(inputData_y),"]")
-print("training : ",len(inputData_x))
-print("testing  : ",len(testData_x))
-print("img per round :",random_rate,"of",len(inputData_x))
-
-max_acc = 0
-max_index = 0
-
-for i in range(1000):
-
-    nt = time.time()
     batch_x = []
     batch_y = []
-    rlist = []
 
-    train_accuracy = accuracy.eval(feed_dict={x: testData_x, y_: testData_y, keep_prob: 1.0})
+    summary_writer = tf.summary.FileWriter(r"C:\Users\miniBear\Desktop\nn\training\model", sess.graph)
 
-    if train_accuracy > max_acc:
-        max_acc = train_accuracy
-        max_index = i
+    total_time = 0
+    round_t = 0
+    localtime = time.asctime(time.localtime(time.time()))
+    print("Local current time :", localtime)
 
-
-    while len(rlist) < random_rate:
-        tmp = random.randint(0, len(inputData_x)-1)
-        if tmp not in rlist:
-            rlist.append(tmp)
-
-    # print(rlist)
-
-    for r in rlist:
-        batch_x.append(inputData_x[r])
-        batch_y.append(inputData_y[r])
-
-    train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
-
-    summary_str = sess.run(merged_summary_op, feed_dict={x: batch_x, y_: batch_y, keep_prob: 1.0})
-    summary_writer.add_summary(summary_str, i * len(batch_x) + i)
-
-    if i%100 == 0:
-
-        print("step %d, training accuracy %g"%(i, train_accuracy))
-
-        now_time = time.strftime('%H:%M:%S', time.gmtime(round_t))
-        total_time += round_t
-        total_t = time.strftime('%H:%M:%S', time.gmtime(total_time))
-        print("time (now / total)",now_time,"/", total_t)
-        round_t = 0
-
-    round_t += time.time() - nt
+    ##################################################################################################
 
 
-print ("best acc:", max_acc ,"on step:",max_index)
+    random_rate = int(0.5 * len(inputData_x))
+    size_data = len(inputData_x) + len(testData_x)
+    print("size of data: ", size_data, "shape : [", len(inputData_x[0]), ",", len(inputData_y), "]")
+    print("training : ", len(inputData_x))
+    print("testing  : ", len(testData_x))
+    print("img per round :", random_rate, "of", len(inputData_x))
 
-save_path = saver.save(sess,r"C:\Users\miniBear\Desktop\nn\training\model\softmaxNNModel.model")
-print("Model saved to file: %s" % save_path)
+    max_acc = 0
+    max_index = 0
 
-# TESTING
-# -------
+    for i in range(1000):
 
-# testing
-# correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
-# # accuracy
-# accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-#
-#
-# print("Accuracy :",sess.run(accuracy, feed_dict={x: testingData_x, y_: testingData_y}))
+        nt = time.time()
+        batch_x = []
+        batch_y = []
+        rlist = []
 
-#yop = tf.nn.softmax(tf.matmul(x, W) + b)
-#op = sess.run(yop, feed_dict={x: batch_x})
-#print (op)
+        train_accuracy = accuracy.eval(feed_dict={x: testData_x, y_: testData_y, keep_prob: 1.0})
 
+        if train_accuracy > max_acc:
+            max_acc = train_accuracy
+            max_index = i
+
+        while len(rlist) < random_rate:
+            tmp = random.randint(0, len(inputData_x) - 1)
+            if tmp not in rlist:
+                rlist.append(tmp)
+
+        # print(rlist)
+
+        for r in rlist:
+            batch_x.append(inputData_x[r])
+            batch_y.append(inputData_y[r])
+
+        train_step.run(feed_dict={x: batch_x, y_: batch_y, keep_prob: 0.3})
+
+        summary_str = sess.run(merged_summary_op, feed_dict={x: batch_x, y_: batch_y, keep_prob: 1.0})
+        summary_writer.add_summary(summary_str, i * len(batch_x) + i)
+
+        if i % 100 == 0:
+            print("step %d, training accuracy %g" % (i, train_accuracy))
+
+            now_time = time.strftime('%H:%M:%S', time.gmtime(round_t))
+            total_time += round_t
+            total_t = time.strftime('%H:%M:%S', time.gmtime(total_time))
+            print("time (now / total)", now_time, "/", total_t)
+            round_t = 0
+
+        round_t += time.time() - nt
+
+    print("best acc:", max_acc, "on step:", max_index)
+
+    save_path = saver.save(sess, r"C:\Users\miniBear\Desktop\nn\training\model\softmaxNNModel.model")
+    print("Model saved to file: %s" % save_path)
+
+
+
+
+def solve():
+    save_path = saver.restore(sess, r"C:\Users\miniBear\Desktop\nn\training\model\softmaxNNModel.model")
+    print("Model load to file: %s" % save_path)
+
+    pre = []
+    la = []
+
+    for fol_name in training_data:
+
+        for i in range(len(training_data[fol_name])):
+            if i >= 20:
+                break
+
+            file = training_data[fol_name][i]
+            data = [file[0]]
+            label = [file[1]]
+            tmp = label[0]
+
+            la_index = tmp.tolist().index(1)
+            la.append(la_index)
+
+            out = sess.run(y_conv, feed_dict={x: data, y_: label, keep_prob: 1.0})
+            # print(len(data),len(label))
+            out = out[0]
+
+            max_i = max(out)
+            index = out.tolist().index(max_i)
+
+            pre.append(index)
+
+    print(len(pre),len(la))
+    print(pre)
+    print(la)
+
+    # print("Precision", sk.metrics.precision_score(la, pre))
+    # print("Recall", sk.metrics.recall_score(la, pre, average='metrics'))
+    # print("f1_score", sk.metrics.f1_score(la, pre, average='metrics'))
+    # print("confusion_matrix")
+
+
+    precision, recall, fscore, support = score(pre, la)
+
+    print('precision: {}'.format(precision))
+    print('recall: {}'.format(recall))
+    print('fscore: {}'.format(fscore))
+    print('support: {}'.format(support))
+
+    cc = support.tolist()
+    for c in range(len(cc)):
+        print(cc[c],charMap[c])
+
+    size = len(precision)
+    temp = sk.metrics.confusion_matrix(la, pre).tolist()
+    tee = np.reshape(temp,(size,size))
+    print(tee)
+    for k in range(size):
+        if k ==0:
+            print("      ",end="")
+            for j in charMap:
+                print(j," ",end="")
+            print()
+        tmp = tee[k].tolist()
+        print(charMap[k],"\t",tmp)
+
+
+solve()
