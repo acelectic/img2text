@@ -9,6 +9,7 @@ import itertools
 import matplotlib.pyplot as plt
 import sklearn as sk
 from sklearn.metrics import precision_recall_fscore_support as score
+from sklearn.metrics import accuracy_score as acc_score
 
 # training data previously stored as a dictionary and written to a pickle dump
 training_data = pickle.load( open( "dict.pickle", "rb" ) )
@@ -352,6 +353,7 @@ def solve():
             # print(len(data),len(label))
             out = out[0]
 
+
             max_i = max(out)
             index = out.tolist().index(max_i)
 
@@ -366,53 +368,50 @@ def solve():
     # print("f1_score", sk.metrics.f1_score(la, pre, average='metrics'))
     # print("confusion_matrix")
 
-
     precision, recall, fscore, support = score(pre, la)
 
-    # print('precision: {}'.format(precision))
-    # print('recall: {}'.format(recall))
-    # print('fscore: {}'.format(fscore))
-    # print('support: {}'.format(support))
-
+    acc = acc_score(pre,la).tolist()
+    print("acc :",acc)
     cc = support.tolist()
     dd = precision.tolist()
     rr = recall.tolist()
     ff = fscore.tolist()
-    # for c in range(len(cc)):
-    #     print('{}\t{:.2f}\t{:.2f}\t{:.2f}\t{:.2f}'.format( charMap[c],dd[c],rr[c],ff[c],cc[c]))
+
+    for c in range(len(cc)):
+        print('{}\t{:.2f}\t{:.2f}\t{:.2f}\t{:.2f}'.format( charMap[c],dd[c],rr[c],ff[c],cc[c]))
 
     avg_pre = avg_list(dd)
     avg_recall = avg_list(rr)
     avg_fscore = avg_list(ff)
 
-    # print('avg prediction\t{:.4f}\navg recall\t{:.4f}\navg fscore\t{:.4f}'.format(avg_pre,avg_recall,avg_fscore))
+    print('avg precision\t{:.10f}\navg recall\t{:.10f}\navg fscore\t{:.10f}'.format(avg_pre,avg_recall,avg_fscore))
 
 
     size = len(precision)
     temp = sk.metrics.confusion_matrix(la, pre).tolist()
     tee = np.reshape(temp,(size,size))
 
-    # for k in range(size):
-    #     if k ==0:
-    #         print("      ",end="")
-    #         for j in charMap:
-    #             print(j," ",end="")
-    #         print()
-    #     tmp = tee[k].tolist()
-    #     print(charMap[k],"\t",tmp)
+    for k in range(size):
+        if k ==0:
+            print("      ",end="")
+            for j in charMap:
+                print(j," ",end="")
+            print()
+        tmp = tee[k].tolist()
+        print(charMap[k],"\t",tmp)
 
     # Plot non-normalized confusion matrix
-
-    plt.figure()
-    plot_confusion_matrix(tee, classes=charMap,
-                          title='Confusion matrix, without normalization')
-
-    # Plot normalized confusion matrix
+    #
     # plt.figure()
-    # plot_confusion_matrix(new_out, classes=charMap, normalize=True,
-    #                       title='Normalized confusion matrix')
-
-    plt.show()
+    # plot_confusion_matrix(tee, classes=charMap,
+    #                       title='Confusion matrix, without normalization')
+    #
+    # # Plot normalized confusion matrix
+    # # plt.figure()
+    # # plot_confusion_matrix(new_out, classes=charMap, normalize=True,
+    # #                       title='Normalized confusion matrix')
+    #
+    # plt.show()
 
 
 solve()
