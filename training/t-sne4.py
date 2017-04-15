@@ -1,9 +1,12 @@
 
+# -*- coding: utf-8 -*-
 
 import sys,os,pickle,random
 import numpy as np
 import tensorflow as tf
 import time
+import itertools
+import matplotlib.pyplot as plt
 import sklearn as sk
 from sklearn.metrics import precision_recall_fscore_support as score
 
@@ -290,7 +293,39 @@ def train():
     print("Model saved to file: %s" % save_path)
 
 
+def avg_list(item):
+    return sum(item)/len(item)
 
+
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
 
 def solve():
     save_path = saver.restore(sess, r"C:\Users\miniBear\Desktop\nn\training\model\softmaxNNModel.model")
@@ -334,27 +369,54 @@ def solve():
 
     precision, recall, fscore, support = score(pre, la)
 
-    print('precision: {}'.format(precision))
-    print('recall: {}'.format(recall))
-    print('fscore: {}'.format(fscore))
-    print('support: {}'.format(support))
+    # print('precision: {}'.format(precision))
+    # print('recall: {}'.format(recall))
+    # print('fscore: {}'.format(fscore))
+    # print('support: {}'.format(support))
 
     cc = support.tolist()
-    for c in range(len(cc)):
-        print(cc[c],charMap[c])
+    dd = precision.tolist()
+    rr = recall.tolist()
+    ff = fscore.tolist()
+    # for c in range(len(cc)):
+    #     print('{}\t{:.2f}\t{:.2f}\t{:.2f}\t{:.2f}'.format( charMap[c],dd[c],rr[c],ff[c],cc[c]))
+
+    avg_pre = avg_list(dd)
+    avg_recall = avg_list(rr)
+    avg_fscore = avg_list(ff)
+
+    # print('avg prediction\t{:.4f}\navg recall\t{:.4f}\navg fscore\t{:.4f}'.format(avg_pre,avg_recall,avg_fscore))
+
 
     size = len(precision)
     temp = sk.metrics.confusion_matrix(la, pre).tolist()
     tee = np.reshape(temp,(size,size))
-    print(tee)
-    for k in range(size):
-        if k ==0:
-            print("      ",end="")
-            for j in charMap:
-                print(j," ",end="")
-            print()
-        tmp = tee[k].tolist()
-        print(charMap[k],"\t",tmp)
+
+    # for k in range(size):
+    #     if k ==0:
+    #         print("      ",end="")
+    #         for j in charMap:
+    #             print(j," ",end="")
+    #         print()
+    #     tmp = tee[k].tolist()
+    #     print(charMap[k],"\t",tmp)
+
+    # Plot non-normalized confusion matrix
+
+    plt.figure()
+    plot_confusion_matrix(tee, classes=charMap,
+                          title='Confusion matrix, without normalization')
+
+    # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(new_out, classes=charMap, normalize=True,
+    #                       title='Normalized confusion matrix')
+
+    plt.show()
 
 
 solve()
+
+
+
+
