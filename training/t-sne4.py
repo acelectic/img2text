@@ -412,15 +412,16 @@ def solve():
     # plot_confusion_matrix(tee, classes=charMap,
     #                       title='Confusion matrix, without normalization')
     #
-    # # Plot normalized confusion matrix
-    # # plt.figure()
-    # # plot_confusion_matrix(new_out, classes=charMap, normalize=True,
-    # #                       title='Normalized confusion matrix')
-    #
-    # plt.show()
+    # Plot normalized confusion matrix
+    plt.figure()
+    plot_confusion_matrix(tee, classes=charMap, normalize=True,
+                          title='Normalized confusion matrix')
 
-# train()
-solve()
+    plt.show()
+
+if __name__ == '__main__':
+    # train()
+    solve()
 
 
 
